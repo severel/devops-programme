@@ -54,7 +54,6 @@ jobs:
 # generate a default pipeline for python code, based on the file structure
   python-setup:
     runs-on: ubuntu-latest
-    needs: Explore-GitHub-Actions
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
