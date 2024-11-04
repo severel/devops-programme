@@ -12,6 +12,10 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, b"Hello, World!")
 
+    def test_calculate_sum(self):
+        response = self.client.get("/sum/1/2")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, b"3")   
 
 if __name__ == "__main__":
     unittest.main()
