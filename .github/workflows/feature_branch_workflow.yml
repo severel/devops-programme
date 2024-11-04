@@ -110,7 +110,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: python-app:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/python-app:latest
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
