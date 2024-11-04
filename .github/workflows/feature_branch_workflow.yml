@@ -2,51 +2,114 @@ name: GitHub Actions Demo
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v4
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+  # Explore-GitHub-Actions:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+  #     - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
+  #     - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+  #     - name: Check out repository code
+  #       uses: actions/checkout@v4
+  #     - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+  #     - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+  #     - name: List files in the repository
+  #       run: |
+  #         ls ${{ github.workspace }}
+  #     - run: echo "🍏 This job's status is ${{ job.status }}."
 
-  build:
+  # build:
+  #   runs-on: ubuntu-latest
+  #   needs: Explore-GitHub-Actions
+  #   steps:
+  #     - run: echo "Code build"
+
+  # lint:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #     - run: echo "Code lint"
+
+  # unittest:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #     - run: echo "Code unittest"
+
+  # configure-secrets:
+  #   runs-on: ubuntu-latest
+  #   needs: build
+  #   steps:
+  #     - name: Retrieve secret
+  #       env:
+  #         super_secret: ${{ secrets.SUPERSECRET }}
+  #       run: |
+  #         echo "$super_secret"
+
+  # deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: [lint, unittest, configure-secrets]
+  #   steps:
+  #     - run: echo "deploy"
+
+# generate a default pipeline for python code, based on the file structure
+  python-setup:
     runs-on: ubuntu-latest
     needs: Explore-GitHub-Actions
     steps:
-      - run: echo "Code build"
-
-  lint:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - run: echo "Code lint"
-
-  unittest:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - run: echo "Code unittest"
-
-  configure-secrets:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Retrieve secret
-        env:
-          super_secret: ${{ secrets.SUPERSECRET }}
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
         run: |
-          echo "$super_secret"
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-  deploy:
+  python-lint:
     runs-on: ubuntu-latest
-    needs: [lint, unittest, configure-secrets]
+    needs: python-setup
     steps:
-      - run: echo "deploy"
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Run linting
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+  python-test:
+    runs-on: ubuntu-latest
+    needs: python-setup
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Run tests
+        run: |
+          pip install pytest
+          pytest
+
+  python-build:
+    runs-on: ubuntu-latest
+    needs: [python-lint, python-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package
+          path: dist/
