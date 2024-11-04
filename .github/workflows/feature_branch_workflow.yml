@@ -23,7 +23,7 @@ jobs:
     steps:
       - run: echo "Code lint"
 
-  unittest:
+  unittest1:
     runs-on: ubuntu-latest
     needs: lint
     steps:
