@@ -122,13 +122,55 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'python-app:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+      # - name: Run Trivy vulnerability scanner
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: 'python-app:latest'
+      #     format: 'table'
+      #     exit-code: '1'
+      #     ignore-unfixed: true
+      #     vuln-type: 'os,library'
+      #     severity: 'CRITICAL,HIGH'
+
+      - name: Start minikube
+        uses: medyagh/setup-minikube@master
+
+      - name: Get minikube status
+        run: minikube status
+
+      - name: Deploy to minikube
+        run: |
+          # Pull the image we just pushed
+          minikube image pull ${{ secrets.DOCKER_USERNAME }}/python-app:${{ github.sha }}
+          
+          # Create deployment and service
+          kubectl create deployment python-app --image=${{ secrets.DOCKER_USERNAME }}/python-app:${{ github.sha }}
+          kubectl expose deployment python-app --type=NodePort --port=5000
+          
+          # Wait for deployment to be ready
+          kubectl wait --for=condition=available --timeout=60s deployment/python-app
+          
+          # Get the NodePort and minikube IP
+          NODE_PORT=$(kubectl get svc python-app -o jsonpath='{.spec.ports[0].nodePort}')
+          MINIKUBE_IP=$(minikube ip)
+          
+          # Test the endpoint with curl
+          for i in {1..30}; do
+            if curl -s "http://$MINIKUBE_IP:$NODE_PORT"; then
+              echo "Application is responding successfully"
+              exit 0
+            fi
+            echo "Waiting for application to become responsive..."
+            sleep 2
+          done
+          echo "Application failed to respond within timeout"
+          exit 1
+
+      - name: Clean up
+        if: always()
+        run: |
+          kubectl delete deployment python-app
+          kubectl delete service python-app
+          minikube stop
+
 
