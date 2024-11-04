@@ -1,19 +1,12 @@
-FROM ubuntu:22.04
+FROM python:3.10-slim
 
-RUN apt-get update \
-      && apt-get install -y --no-install-recommends \
-       python3 \
-       python3-pip \
-      && mkdir -p /app \
-      && useradd -d /app -s /bin/bash app \
-      && chown -R app:app /app
-
-COPY requirements.txt /app/requirements.txt
-RUN pip3 install -r /app/requirements.txt
-
-COPY app/app.py /app
 WORKDIR /app
 
-USER app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python3", "app.py"]
+COPY app/ .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
