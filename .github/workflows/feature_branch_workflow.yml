@@ -36,8 +36,7 @@ jobs:
           pip install flake8
       - name: Run linter
         run: |
-          cd app
-          flake8 .
+          flake8 app
 
 # propose a stage for code lintering
 
