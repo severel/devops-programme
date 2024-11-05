@@ -16,6 +16,9 @@ def calculate_sum(a, b):
 @app.route("/subtract/<int:a>/<int:b>")
 def calculate_subtract(a, b):
     return str(a - b)
+@app.route("/five")
+def print_five():
+    return "5"
 
 
 

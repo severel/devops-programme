@@ -22,5 +22,10 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, b"-1")
 
+    def test_print_five(self):
+        response = self.client.get("/five")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, b"5")
+
 if __name__ == "__main__":
     unittest.main()

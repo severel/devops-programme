@@ -161,26 +161,45 @@ jobs:
           # Create a deployment
           kubectl create deployment python-app --image=${{ secrets.DOCKER_USERNAME }}/python-app:${{ github.sha }}
           
+          # Wait for deployment to be available
+          kubectl rollout status deployment/python-app --timeout=120s
+          
           # Expose the deployment
           kubectl expose deployment python-app --type=NodePort --port=5000
 
       - name: Test Deployment
         run: |
-          # Wait for pod to be ready
-          kubectl wait --for=condition=ready pod -l app=python-app --timeout=60s
+          # Wait for pod to be ready (with retry logic)
+          for i in {1..30}; do
+            if kubectl get pods -l app=python-app | grep -q "Running"; then
+              break
+            fi
+            echo "Waiting for pod to be ready... attempt $i"
+            sleep 10
+          done
+          
+          # Verify pod is actually running
+          if ! kubectl get pods -l app=python-app | grep -q "Running"; then
+            echo "Pod failed to reach Running state"
+            kubectl get pods -l app=python-app -o wide
+            exit 1
+          fi
           
           # Get the URL and test the endpoints
           MINIKUBE_URL=$(minikube service python-app --url)
           
-          # Test endpoints
+          # Add delay to ensure service is ready
+          sleep 10
+          
+          # Test endpoints with better error handling
           echo "Testing root endpoint..."
-          curl $MINIKUBE_URL/
+          curl -f $MINIKUBE_URL/ || exit 1
           
           echo "Testing sum endpoint..."
-          curl $MINIKUBE_URL/sum/2/3
+          curl -f $MINIKUBE_URL/sum/2/3 || exit 1
           
           echo "Testing subtract endpoint..."
-          curl $MINIKUBE_URL/subtract/5/3
+          curl -f $MINIKUBE_URL/subtract/5/3 || exit 1
 
       - name: Cleanup
         if: always()
@@ -188,6 +207,3 @@ jobs:
           kubectl delete service python-app
           kubectl delete deployment python-app
           minikube delete
-
-
-
