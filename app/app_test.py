@@ -17,5 +17,10 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, b"3")   
 
+    def test_calculate_subtract(self):
+        response = self.client.get("/subtract/1/2")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, b"-1")
+
 if __name__ == "__main__":
     unittest.main()
