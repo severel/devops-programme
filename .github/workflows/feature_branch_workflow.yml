@@ -114,6 +114,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/python-app:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/python-app:latest,${{ secrets.DOCKER_USERNAME }}/python-app:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
